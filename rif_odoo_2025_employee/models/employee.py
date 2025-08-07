@@ -37,8 +37,13 @@ class Employee(models.Model):
     #  replace with the real candidat.model
     _inherits={"test_candidat.rif.2025":"employee_data_candidat"}
     
-   #employee_data_candidat=fields.Many2one("test_candidat.rif.2025",compute="_compute_data_of_employee_candidat")
     employee_data_candidat=fields.Many2one("test_candidat.rif.2025",ondelete="cascade",onupdate="cascade")
+    original_employee_data_candidat=fields.Many2one("test_candidat.rif.2025",ondelete="cascade",onupdate="cascade")
+    #editable fields from candidat to reset and store 
+    departement = fields.Selection(related="employee_data_candidat.departement", store=True)
+    #original_departement = fields.Selection(related="employee_data_candidat.departement", store=True)
+    poste = fields.Selection(related="employee_data_candidat.poste", store=True)
+    #original_poste = fields.Selection(related="employee_data_candidat.poste", store=True)
     #i cant override the default_get() twice here so i will get the session with the records
     @api.model
     def default_get(self,fields_list):
@@ -50,27 +55,52 @@ class Employee(models.Model):
         defaults['session_user_email']=user.email     
         return defaults
     #now i will create a rh field and set it to True
-    #so i can controle it in view
+    #so i can controle it in view or try to reset the values here
     rh=fields.Boolean()
     #now i will try to reset the rh fields if modified
-    @api.onchange("employee_data_candidat")
+    @api.onchange("employee_data_candidat","rh","departement","poste")
     def departement_rh(self):
         for i in self:
             #fetch user data from candidat
             #candidat=self.env["test_candidat.rif.2025"].search([('email','=',i.session_user_email)],limit=1)
-            candidat=self.env["test_candidat.rif.2025"].search([('email','=','test@mail.com')],limit=1)
+            candidat=self.env["test_candidat.rif.2025"].search([('email','=','django@mail.com')],limit=1)
             if(candidat):
-                if(candidat.is_accepted):    
+                if(candidat.is_accepted):
+                    #now i need to get the original data employee if it's not rh else a list of employees    
                     if(candidat.departement=='rh'):
+                        #i.employee_data_candidat=i.original_employee_data_candidat
+                        _logger.info(str({
+                        "candidat":candidat,
+                        "original_candidat":i.original_employee_data_candidat,
+                    }))    
                         if(candidat.poste=='rh'):
                             i.rh=True
                         else:
                             i.rh=False
+                            #i.employee_data_candidat=candidat
+                            #i.original_departement=candidat.departement
+                            #i.original_poste=candidat.poste
                     else:
                         i.rh=False
+                        #i.employee_data_candidat=candidat
+                        #i.original_departement=candidat.departement
+                        #i.original_poste=candidat.poste
+                old_candidat=i.employee_data_candidat.search([('email','=','django@mail.com')],limit=1)
+                if(old_candidat):
+                    original_dep=old_candidat.departement
+                    original_poste=old_candidat.poste
+                    _logger.info(str({
+                        "original_dep":original_dep,
+                        "original_poste":original_poste,
+                    }))
+                
+
                 if(i.rh==False):
-                    raise ValidationError(_("you can't change those fields"))
-                i.employee_data_candidat = candidat
+                    i.employee_data_candidat.departement=original_dep
+                    i.employee_data_candidat.poste=original_poste
+                    #i.employee_data_candidat.departement=i.original_departement
+                    #i.employee_data_candidat.poste=i.original_poste
+                    #raise ValidationError(_("you can't change those fields"))
             
             
     
