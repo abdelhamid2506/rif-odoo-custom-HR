@@ -5,6 +5,10 @@
 # this will create a database named odoo_18 with user and pass odoo(user of sql server) and load odoo 
 # addons "./addons" and this project "custom_addons" and init this base for it
 
+
+#   Contract documents
+#       inside the notepage page(Details) in the field Notes upload your files
+
 # hide/show presence model(attendance)
 # To hide(desactive) or restrict access:
 #   Remove Access Rights
